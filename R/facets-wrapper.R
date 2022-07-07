@@ -147,7 +147,7 @@ plotSample <- function(x, emfit=NULL, clustered=FALSE, plot.type=c("em","naive",
     }
     mafR <- abs(mafR)
     # chromosome colors
-    chrcol <- 1+rep(out$chr-2*floor(out$chr/2), out$num.mark)
+    chrcol <- 1+rep(out$chrom-2*floor(out$chrom/2), out$num.mark)
     nn <- cumsum(table(jseg$chrom[is.finite(jseg$cnlr)]))
     segbdry <- cumsum(c(0,out$num.mark))
     segstart <- segbdry[-length(segbdry)]
@@ -245,4 +245,19 @@ logRlogORspider <- function(cncf, dipLogR=0, nfrac=0.005) {
     chrcol <- rainbow(24)
     points(cncf$cnlr.median[ii] - dipLogR, sqrt(abs(cncf$mafR[ii])), cex=cex, pch=10, col=chrcol[cncf$chrom[ii]], lwd=1.5)
     legend(-1, 5.25, paste("chr", c(1:22, "X"), sep=""), ncol=4, pch=10, col=chrcol[1:23], cex=0.65)
+}
+
+# this function can be used to rerun facets on output from procSample
+# usage is xx <- rePreProcSample(out$jointseg[,1:8])
+# oo <- procSample(xx, ...) etc.
+rePreProcSample<- function(jseg, cval=25, deltaCN=0, gbuild=c("hg19", "hg38", "hg18", "mm9", "mm10"), hetscale=TRUE, unmatched=FALSE) {
+    pmat <- jseg[, c("chrom", "maploc", "rCountT", "rCountN", "vafT", "vafN", "het", "keep")]
+    gbuild <- match.arg(gbuild)
+    # integer value for chromosome X depends on the genome
+    if (gbuild %in% c("hg19", "hg38", "hg18")) nX <- 23
+    if (gbuild %in% c("mm9", "mm10")) nX <- 20
+    dmat <- counts2logROR(pmat[pmat$rCountT>0,], gbuild, unmatched)
+    tmp <- segsnps(dmat, cval, hetscale, deltaCN)
+    out <- list(pmat=pmat, gbuild=gbuild, nX=nX)
+    c(out, tmp)
 }
